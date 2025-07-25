@@ -1,5 +1,6 @@
 package com.zitsav.memoir.activity
 
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -29,7 +30,15 @@ class HomeActivity : ComponentActivity() {
             HomeScreen(
                 userName = "Utsav",
                 notes = viewModel.entries,
-                onAddNoteClick = {}
+                onAddNoteClick = {
+                    val intent = Intent(this, CreateOrEditNoteActivity::class.java)
+                    startActivity(intent)
+                },
+                onNoteClick = {
+                    val intent = Intent(this, CreateOrEditNoteActivity::class.java)
+                    intent.putExtra("ENTRY_ID", it.id)
+                    startActivity(intent)
+                }
             )
         }
     }

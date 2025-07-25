@@ -49,7 +49,8 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
     userName: String = "Utsav",
     notes: List<Entry>,
-    onAddNoteClick: () -> Unit
+    onAddNoteClick: () -> Unit,
+    onNoteClick: (Entry) -> Unit,
 ) {
     val today = LocalDate.now()
     val showFab = notes.none { LocalDate.ofEpochDay(it.date) == today }
@@ -74,7 +75,10 @@ fun HomeScreen(
         } else {
             LazyColumn(modifier = Modifier.weight(1f)) {
                 items(notes){
-                    NoteItem(entry = it)
+                    NoteItem(
+                        entry = it,
+                        onNoteClick = { onNoteClick(it) }
+                    )
                     Spacer(modifier = Modifier.height(16.dp))
                 }
             }
@@ -137,7 +141,10 @@ fun DaySelectorRow(today: LocalDate) {
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun NoteItem(entry: Entry) {
+fun NoteItem(
+    entry: Entry,
+    onNoteClick: () -> Unit
+) {
     val textStyle = MaterialTheme.typography.bodyMedium
     val maxLines = 7
     var expanded by remember {
@@ -154,6 +161,9 @@ fun NoteItem(entry: Entry) {
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.surfaceVariant, shape = RoundedCornerShape(8.dp))
             .padding(16.dp)
+            .clickable {
+                onNoteClick()
+            }
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -234,6 +244,7 @@ fun HomeScreenPreview() {
     HomeScreen(
         userName = "Utsav",
         notes = sampleNotes,
-        onAddNoteClick = {}
+        onAddNoteClick = {},
+        onNoteClick = {}
     )
 }

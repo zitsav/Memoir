@@ -2,6 +2,7 @@ package com.zitsav.memoir.data.entry
 
 import android.content.ContentValues
 import android.content.Context
+import com.zitsav.memoir.data.DatabaseConstants
 import com.zitsav.memoir.data.MemoirDatabaseHelper
 import net.sqlcipher.database.SQLiteDatabase
 
@@ -15,11 +16,11 @@ class EntryRepositoryImpl(
 
     override fun insert(entry: Entry): Long {
         val values = ContentValues().apply {
-            put("title", entry.title)
-            put("text", entry.text)
-            put("date", entry.date)
-            put("mood", entry.mood)
-            put("attachment", entry.attachment)
+            put(DatabaseConstants.ENTRY_TITLE, entry.title)
+            put(DatabaseConstants.ENTRY_DESCRIPTION, entry.text)
+            put(DatabaseConstants.ENTRY_DATE, entry.date)
+            put(DatabaseConstants.ENTRY_MOOD, entry.mood)
+            put(DatabaseConstants.ENTRY_ATTACHMENT, entry.attachment)
         }
         return db.insert(MemoirDatabaseHelper.TABLE_ENTRIES, null, values)
     }
@@ -35,12 +36,12 @@ class EntryRepositoryImpl(
             while (cursor.moveToNext()) {
                 entries.add(
                     Entry(
-                        id = cursor.getLong(cursor.getColumnIndexOrThrow("id")),
-                        title = cursor.getString(cursor.getColumnIndexOrThrow("title")),
-                        text = cursor.getString(cursor.getColumnIndexOrThrow("text")),
-                        date = cursor.getLong(cursor.getColumnIndexOrThrow("date")),
-                        mood = cursor.getInt(cursor.getColumnIndexOrThrow("mood")),
-                        attachment = cursor.getString(cursor.getColumnIndexOrThrow("attachment"))
+                        id = cursor.getLong(cursor.getColumnIndexOrThrow(DatabaseConstants.ENTRY_ID)),
+                        title = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseConstants.ENTRY_TITLE)),
+                        text = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseConstants.ENTRY_DESCRIPTION)),
+                        date = cursor.getLong(cursor.getColumnIndexOrThrow(DatabaseConstants.ENTRY_DATE)),
+                        mood = cursor.getInt(cursor.getColumnIndexOrThrow(DatabaseConstants.ENTRY_MOOD)),
+                        attachment = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseConstants.ENTRY_ATTACHMENT))
                     )
                 )
             }
@@ -52,7 +53,7 @@ class EntryRepositoryImpl(
         val cursor = db.query(
             MemoirDatabaseHelper.TABLE_ENTRIES,
             null,
-            "date = ?",
+            "${DatabaseConstants.ENTRY_DATE} = ?",
             arrayOf(date.toString()),
             null, null, null
         )
@@ -60,12 +61,36 @@ class EntryRepositoryImpl(
         cursor.use {
             if (cursor.moveToFirst()) {
                 return Entry(
-                    id = cursor.getLong(cursor.getColumnIndexOrThrow("id")),
-                    title = cursor.getString(cursor.getColumnIndexOrThrow("title")),
-                    text = cursor.getString(cursor.getColumnIndexOrThrow("text")),
-                    date = cursor.getLong(cursor.getColumnIndexOrThrow("date")),
-                    mood = cursor.getInt(cursor.getColumnIndexOrThrow("mood")),
-                    attachment = cursor.getString(cursor.getColumnIndexOrThrow("attachment"))
+                    id = cursor.getLong(cursor.getColumnIndexOrThrow(DatabaseConstants.ENTRY_ID)),
+                    title = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseConstants.ENTRY_TITLE)),
+                    text = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseConstants.ENTRY_DESCRIPTION)),
+                    date = cursor.getLong(cursor.getColumnIndexOrThrow(DatabaseConstants.ENTRY_DATE)),
+                    mood = cursor.getInt(cursor.getColumnIndexOrThrow(DatabaseConstants.ENTRY_MOOD)),
+                    attachment = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseConstants.ENTRY_ATTACHMENT))
+                )
+            }
+        }
+        return null
+    }
+
+    override fun getById(id: Long): Entry? {
+        val cursor = db.query(
+            MemoirDatabaseHelper.TABLE_ENTRIES,
+            null,
+            "${DatabaseConstants.ENTRY_ID} = ?",
+            arrayOf(id.toString()),
+            null, null, null
+        )
+
+        cursor.use {
+            if (cursor.moveToFirst()) {
+                return Entry(
+                    id = cursor.getLong(cursor.getColumnIndexOrThrow(DatabaseConstants.ENTRY_ID)),
+                    title = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseConstants.ENTRY_TITLE)),
+                    text = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseConstants.ENTRY_DESCRIPTION)),
+                    date = cursor.getLong(cursor.getColumnIndexOrThrow(DatabaseConstants.ENTRY_DATE)),
+                    mood = cursor.getInt(cursor.getColumnIndexOrThrow(DatabaseConstants.ENTRY_MOOD)),
+                    attachment = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseConstants.ENTRY_ATTACHMENT))
                 )
             }
         }
@@ -75,24 +100,24 @@ class EntryRepositoryImpl(
     override fun deleteById(id: Long): Boolean {
         return db.delete(
             MemoirDatabaseHelper.TABLE_ENTRIES,
-            "id = ?",
+            "${DatabaseConstants.ENTRY_ID} = ?",
             arrayOf(id.toString())
         ) > 0
     }
 
     override fun update(entry: Entry): Boolean {
         val values = ContentValues().apply {
-            put("title", entry.title)
-            put("text", entry.text)
-            put("date", entry.date)
-            put("mood", entry.mood)
-            put("attachment", entry.attachment)
+            put(DatabaseConstants.ENTRY_TITLE, entry.title)
+            put(DatabaseConstants.ENTRY_DESCRIPTION, entry.text)
+            put(DatabaseConstants.ENTRY_DATE, entry.date)
+            put(DatabaseConstants.ENTRY_MOOD, entry.mood)
+            put(DatabaseConstants.ENTRY_ATTACHMENT, entry.attachment)
         }
 
         val rowsAffected = db.update(
             MemoirDatabaseHelper.TABLE_ENTRIES,
             values,
-            "id = ?",
+            "${DatabaseConstants.ENTRY_ID} = ?",
             arrayOf(entry.id.toString())
         )
 
