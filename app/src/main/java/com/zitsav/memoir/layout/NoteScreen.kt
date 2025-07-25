@@ -6,13 +6,12 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.*
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.OffsetMapping
@@ -20,6 +19,7 @@ import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.*
+import com.zitsav.memoir.R
 import java.util.regex.PatternSyntaxException
 
 private val aiPattern = Regex("/ai\\{([\\s\\S]*?)\\}")
@@ -41,18 +41,27 @@ fun NotesScreen(
                 .padding(16.dp)
         ) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(
                     onClick = onBack,
                     modifier = Modifier
-                        .size(40.dp)
                         .clip(CircleShape)
-                        .background(Color.LightGray)
+                        .background(
+                            Color(0xFF6200EE).copy(alpha = 0.3F)
+                        )
+                        .size(30.dp)
                 ) {
-                    Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    Icon(painterResource(
+                        R.drawable.baseline_arrow_back_24),
+                        contentDescription = "Back",
+                        modifier = Modifier
+                            .padding(6.dp)
+                    )
                 }
 
                 Text(
@@ -63,11 +72,18 @@ fun NotesScreen(
                 IconButton(
                     onClick = onSaveClick,
                     modifier = Modifier
-                        .size(40.dp)
                         .clip(CircleShape)
-                        .background(Color.LightGray)
+                        .background(
+                            Color(0xFF6200EE).copy(alpha = 0.3F)
+                        )
+                        .size(30.dp)
                 ) {
-                    Icon(Icons.Default.Done, contentDescription = "Save")
+                    Icon(
+                        painterResource(R.drawable.baseline_send_24),
+                        contentDescription = "Save",
+                        modifier = Modifier
+                            .padding(6.dp)
+                    )
                 }
             }
 
@@ -76,7 +92,10 @@ fun NotesScreen(
             TextField(
                 value = title,
                 onValueChange = onTitleChange,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = {
+                    Text("Enter a title...")
+                }
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -106,17 +125,17 @@ fun NotesScreen(
                 .fillMaxWidth()
                 .padding(16.dp)
                 .clip(RoundedCornerShape(24.dp))
-                .background(MaterialTheme.colorScheme.surface),
+                .background(Color(0xFF6200EE).copy(alpha = 0.3F)),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             IconButton(onClick = { /* TODO: AI click */ }) {
-                Icon(Icons.Default.Star, contentDescription = "AI")
+                Icon(painterResource(id = R.drawable.baseline_auto_awesome_24), contentDescription = "AI")
             }
             IconButton(onClick = { /* TODO: Mic click */ }) {
-                Icon(Icons.Default.AddCircle, contentDescription = "Mic")
+                Icon(painterResource(id = R.drawable.baseline_mic_24), contentDescription = "Mic")
             }
             IconButton(onClick = { /* TODO: Attachment click */ }) {
-                Icon(Icons.Default.MailOutline, contentDescription = "Attachment")
+                Icon(painterResource(id = R.drawable.baseline_attach_file_24), contentDescription = "Attachment")
             }
         }
     }
@@ -164,7 +183,7 @@ fun CustomRichTextEditor(
             }
         },
         modifier = Modifier
-            .fillMaxSize()
+            .fillMaxWidth()
             .padding(8.dp),
         textStyle = TextStyle.Default.copy(fontSize = 16.sp, lineHeight = 24.sp),
         visualTransformation = AiBlockVisualTransformation(),

@@ -1,9 +1,11 @@
 package com.zitsav.memoir.activity
 
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.annotation.RequiresApi
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -16,6 +18,7 @@ import kotlinx.coroutines.launch
 class CreateOrEditNoteActivity : ComponentActivity() {
     private lateinit var viewModel: NotesViewModel
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -38,8 +41,12 @@ class CreateOrEditNoteActivity : ComponentActivity() {
                 title = viewModel.title,
                 description = viewModel.description,
                 attachmentUri = viewModel.attachmentUri,
-                onTitleChange = {},
-                onDescriptionChange = {},
+                onTitleChange = {
+                    viewModel.onTitleChanged(it)
+                },
+                onDescriptionChange = {
+                    viewModel.onDescriptionChanged(it)
+                },
                 onSaveClick = {
                     viewModel.save()
                 },
@@ -50,6 +57,7 @@ class CreateOrEditNoteActivity : ComponentActivity() {
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun setUpListeners() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {

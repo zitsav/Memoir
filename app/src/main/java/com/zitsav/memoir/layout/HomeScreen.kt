@@ -1,6 +1,7 @@
 package com.zitsav.memoir.layout
 
 import android.os.Build
+import android.widget.Space
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -32,11 +33,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.zitsav.memoir.R
 import com.zitsav.memoir.data.entry.Entry
 import com.zitsav.memoir.utils.lineCount
 import java.time.Instant
@@ -214,15 +218,28 @@ fun NoteItem(
 fun EmptyNotesPlaceholder() {
     Box(
         modifier = Modifier
-            .fillMaxSize()
-            .padding(top = 64.dp),
-        contentAlignment = Alignment.TopCenter
+            .fillMaxSize(),
+        contentAlignment = Alignment.Center
     ) {
-        Image(
-            painter = painterResource(id = android.R.drawable.ic_menu_report_image),
-            contentDescription = "Empty",
-            modifier = Modifier.size(120.dp)
-        )
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.fillMaxWidth(0.8f)
+        ) {
+            Text(
+                "Looks like your notebook is empty. What’s on your mind today?",
+                style = TextStyle(
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                ),
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+
+            Image(
+                painter = painterResource(R.drawable.home_empty_state),
+                contentDescription = "Empty",
+                modifier = Modifier.size(300.dp)
+            )
+        }
     }
 }
 
