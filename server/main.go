@@ -5,7 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
-	"github.com/zitsav/memoir/server/handlers"
+	"github.com/zitsav/Memoir/server/handlers"
 )
 
 func main() {

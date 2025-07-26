@@ -60,6 +60,8 @@ github.com/twitchyliquid64/golang-asm v0.15.1 h1:SU5vSMR7hnwNxj24w34ZyCi/FmDZTkS
 github.com/twitchyliquid64/golang-asm v0.15.1/go.mod h1:a1lVb/DtPvCB8fslRZhAngC2+aY1QWCk3Cedj/Gdt08=
 github.com/ugorji/go/codec v1.2.12 h1:9LC83zGrHhuUA9l16C9AHXAqEV/2wBQ4nkvumAE65EE=
 github.com/ugorji/go/codec v1.2.12/go.mod h1:UNopzCgEMSXjBc6AOMqYvWC1ktqTAfzJZUZgYf6w6lg=
+github.com/zitsav/Memoir v0.0.0-20250726095719-73c3668840f8 h1:Ep+pNFX3lGwdCPaW0nLegbwZeE04ipNs/xBZIH0bFsg=
+github.com/zitsav/Memoir v0.0.0-20250726095719-73c3668840f8/go.mod h1:dTcRtuZAkoR6uH5Vn25YQG6GHvnWnt6Nl0JaADsE+Ys=
 github.com/zitsav/memoir v0.0.0-20250726072105-3589faedd269 h1:3FbVlhNnc7RSzefEaINN1LlR8fEcEgE2v0wNvpSmGcM=
 github.com/zitsav/memoir v0.0.0-20250726072105-3589faedd269/go.mod h1:llBlseQhLkpDsxCHkvU8wz97bzWi2QqeHK72qfYHoMs=
 golang.org/x/arch v0.0.0-20210923205945-b76863e36670/go.mod h1:5om86z9Hs0C8fWVUuoMHwpExlXzs5Tkyp9hOrfG7pp8=
