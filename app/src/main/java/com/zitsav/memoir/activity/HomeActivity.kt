@@ -38,6 +38,7 @@ class HomeActivity : ComponentActivity() {
                     val intent = Intent(this, CreateOrEditNoteActivity::class.java)
                     intent.putExtra("ENTRY_ID", it.id)
                     startActivity(intent)
+                    finish()
                 }
             )
         }

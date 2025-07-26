@@ -2,6 +2,7 @@ package com.zitsav.memoir.layout
 
 import android.util.Log
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -11,6 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.*
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.*
 import androidx.compose.ui.text.font.FontWeight
@@ -32,7 +34,9 @@ fun NotesScreen(
     onTitleChange: (String) -> Unit,
     onDescriptionChange: (String) -> Unit,
     onSaveClick: () -> Unit,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onMicStart: () -> Unit,
+    onMicStop: () -> Unit,
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -131,7 +135,19 @@ fun NotesScreen(
             IconButton(onClick = { /* TODO: AI click */ }) {
                 Icon(painterResource(id = R.drawable.baseline_auto_awesome_24), contentDescription = "AI")
             }
-            IconButton(onClick = { /* TODO: Mic click */ }) {
+            IconButton(
+                modifier = Modifier
+                    .pointerInput(Unit) {
+                        detectTapGestures(
+                            onPress = {
+                                onMicStart()
+                                tryAwaitRelease()
+                                onMicStop()
+                            }
+                        )
+                    },
+                onClick = {}
+            ) {
                 Icon(painterResource(id = R.drawable.baseline_mic_24), contentDescription = "Mic")
             }
             IconButton(onClick = { /* TODO: Attachment click */ }) {
@@ -214,6 +230,8 @@ fun NotesScreenPreview() {
         onTitleChange = { title = it },
         onDescriptionChange = { description = it },
         onSaveClick = {},
-        onBack = {}
+        onBack = {},
+        onMicStart = {},
+        onMicStop = {},
     )
 }

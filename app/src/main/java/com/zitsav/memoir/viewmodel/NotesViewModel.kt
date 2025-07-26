@@ -6,19 +6,21 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.zitsav.memoir.data.entry.Entry
 import com.zitsav.memoir.repository.NotesRepository
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 
 @RequiresApi(Build.VERSION_CODES.O)
 class NotesViewModel(
     private val repo: NotesRepository
 ) : ViewModel() {
-    private var entryId: Long? = null
+    private var entryId: Long = 0L
 
     var title by mutableStateOf("")
         private set
@@ -82,9 +84,19 @@ class NotesViewModel(
         if (success) {
             _activityFinish.value = true
         } else {
-            _showErrorToast.tryEmit(
-                "Something went wrong. Try again."
-            )
+            viewModelScope.launch {
+                _showErrorToast.tryEmit(
+                    "Something went wrong. Try again."
+                )
+            }
+        }
+    }
+
+    fun onSpeechInput(text: String) {
+        description += if (description.endsWith("\n") || description.isEmpty()) {
+            text
+        } else {
+            "\n$text"
         }
     }
 
