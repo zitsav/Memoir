@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 
@@ -39,8 +40,56 @@ class NotesViewModel(
         description = newDescription
     }
 
+    private val _isAiGenerating = MutableStateFlow(false)
+    val isAiGenerating: StateFlow<Boolean> = _isAiGenerating.asStateFlow()
+
+    //TODO: add ai generation logic
+    fun startAiGeneration() {
+        _isAiGenerating.value = true
+    }
+
+    fun closeAiGeneration() {
+        _isAiGenerating.value = false
+    }
+
+    private val _isRecording = MutableStateFlow(false)
+    val isRecording: StateFlow<Boolean> = _isRecording.asStateFlow()
+
+    private val _micTranscript = MutableStateFlow("")
+    val micTranscript: StateFlow<String> = _micTranscript.asStateFlow()
+
+    fun onRecordingStarted() {
+        _isRecording.value = true
+        _micTranscript.value = ""
+    }
+
+    fun onRecordingFinished(save: Boolean) {
+        _isRecording.value = false
+        if (!save) {
+            _micTranscript.value = ""
+        }
+    }
+
+    fun onPartialSpeechInput(partialText: String) {
+        if (_isRecording.value) {
+            _micTranscript.value = partialText
+        }
+    }
+
+    fun onSpeechInput(spokenText: String) {
+        val currentDescription = description
+        onDescriptionChanged(
+            if (currentDescription.isNotBlank()) {
+                "$currentDescription\n$spokenText"
+            } else {
+                spokenText
+            }
+        )
+        _micTranscript.value = ""
+    }
+
     private val _activityFinish = MutableStateFlow(false)
-    val activityFinish: StateFlow<Boolean> = _activityFinish
+    val activityFinish: StateFlow<Boolean> = _activityFinish.asStateFlow()
 
     private val _showErrorToast = MutableSharedFlow<String>()
     val showErrorToast: SharedFlow<String> = _showErrorToast
@@ -89,14 +138,6 @@ class NotesViewModel(
                     "Something went wrong. Try again."
                 )
             }
-        }
-    }
-
-    fun onSpeechInput(text: String) {
-        description += if (description.endsWith("\n") || description.isEmpty()) {
-            text
-        } else {
-            "\n$text"
         }
     }
 

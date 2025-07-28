@@ -17,11 +17,17 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.zitsav.memoir.data.entry.EntryRepositoryImpl
+import com.zitsav.memoir.layout.AiGenerationOverlay
 import com.zitsav.memoir.layout.NotesScreen
 import com.zitsav.memoir.repository.NotesRepository
 import com.zitsav.memoir.viewmodel.NotesViewModel
@@ -51,38 +57,48 @@ class CreateOrEditNoteActivity : ComponentActivity() {
         setUpSpeechRecognition()
 
         setContent {
-            NotesScreen(
-                title = viewModel.title,
-                description = viewModel.description,
-                attachmentUri = viewModel.attachmentUri,
-                onTitleChange = { viewModel.onTitleChanged(it) },
-                onDescriptionChange = { viewModel.onDescriptionChanged(it) },
-                onSaveClick = { viewModel.save() },
-                onBack = { finish() },
-                onMicStart = { handleMicStart() },
-                onMicStop = { speechRecognizer.stopListening() }
-            )
+            val isRecording by viewModel.isRecording.collectAsState()
+            val micTranscript by viewModel.micTranscript.collectAsState()
+            val isAiGenerating by viewModel.isAiGenerating.collectAsState()
+
+            Box(modifier = Modifier.fillMaxSize()) {
+                NotesScreen(
+                    title = viewModel.title,
+                    description = viewModel.description,
+                    attachmentUri = viewModel.attachmentUri,
+                    isRecording = isRecording,
+                    micTranscript = micTranscript,
+                    onTitleChange = { viewModel.onTitleChanged(it) },
+                    onDescriptionChange = { viewModel.onDescriptionChanged(it) },
+                    onSaveClick = { viewModel.save() },
+                    onBack = { finish() },
+                    onMicStart = { handleMicStart() },
+                    onMicStopAndSave = {
+                        speechRecognizer.stopListening()
+                        viewModel.onRecordingFinished(save = true)
+                    },
+                    onMicStopAndCancel = {
+                        speechRecognizer.stopListening()
+                        viewModel.onRecordingFinished(save = false)
+                    },
+                    onAttachmentClick = { /* TODO: Handle attachment click */ },
+                    onAiClick = { viewModel.startAiGeneration() }
+                )
+
+                if (isAiGenerating) {
+                    AiGenerationOverlay(onClose = { viewModel.closeAiGeneration() })
+                }
+            }
         }
 
         setUpListeners()
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            onBackInvokedDispatcher.registerOnBackInvokedCallback(
-                OnBackInvokedDispatcher.PRIORITY_DEFAULT
-            ) { launchHomeActivity() }
-        } else {
-            onBackPressedDispatcher.addCallback(
-                this,
-                object : OnBackPressedCallback(true) {
-                    override fun handleOnBackPressed() {
-                        launchHomeActivity()
-                    }
-                })
-        }
+        setupOnBackPressed()
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun handleMicStart() {
         if (ContextCompat.checkSelfPermission(this, speechPermission) == PackageManager.PERMISSION_GRANTED) {
+            viewModel.onRecordingStarted()
             speechRecognizer.startListening(recognizerIntent)
         } else {
             micPermissionLauncher.launch(speechPermission)
@@ -115,14 +131,13 @@ class CreateOrEditNoteActivity : ComponentActivity() {
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun setUpSpeechRecognition() {
-        micPermissionLauncher = registerForActivityResult(
-            ActivityResultContracts.RequestPermission()
-        ) { isGranted ->
+        micPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
             if (isGranted) {
-                speechRecognizer.startListening(recognizerIntent)
+                handleMicStart()
             } else {
-                Toast.makeText(this, "Mic permission denied", Toast.LENGTH_SHORT).show()
+                showToast("Mic permission denied")
             }
         }
 
@@ -130,6 +145,7 @@ class CreateOrEditNoteActivity : ComponentActivity() {
         recognizerIntent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
             putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault())
+            putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true) // For live transcript
         }
 
         speechRecognizer.setRecognitionListener(object : RecognitionListener {
@@ -139,8 +155,16 @@ class CreateOrEditNoteActivity : ComponentActivity() {
                 spokenText?.let { viewModel.onSpeechInput(it) }
             }
 
+            @RequiresApi(Build.VERSION_CODES.O)
+            override fun onPartialResults(partialResults: Bundle?) {
+                val partialText = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull()
+                partialText?.let { viewModel.onPartialSpeechInput(it) }
+            }
+
+            @RequiresApi(Build.VERSION_CODES.O)
             override fun onError(error: Int) {
-                Toast.makeText(this@CreateOrEditNoteActivity, "Speech error: $error", Toast.LENGTH_SHORT).show()
+                showToast("Speech error: $error")
+                viewModel.onRecordingFinished(save = false)
             }
 
             override fun onReadyForSpeech(params: Bundle?) {}
@@ -148,9 +172,22 @@ class CreateOrEditNoteActivity : ComponentActivity() {
             override fun onRmsChanged(rmsdB: Float) {}
             override fun onBufferReceived(buffer: ByteArray?) {}
             override fun onEndOfSpeech() {}
-            override fun onPartialResults(partialResults: Bundle?) {}
             override fun onEvent(eventType: Int, params: Bundle?) {}
         })
+    }
+
+    private fun setupOnBackPressed() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            onBackInvokedDispatcher.registerOnBackInvokedCallback(OnBackInvokedDispatcher.PRIORITY_DEFAULT) {
+                launchHomeActivity()
+            }
+        } else {
+            onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    launchHomeActivity()
+                }
+            })
+        }
     }
 
     override fun onDestroy() {

@@ -1,24 +1,28 @@
 package com.zitsav.memoir.layout
 
 import android.util.Log
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.*
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.*
 import com.zitsav.memoir.R
@@ -31,12 +35,17 @@ fun NotesScreen(
     title: String,
     description: String,
     attachmentUri: String?,
+    isRecording: Boolean,
+    micTranscript: String,
     onTitleChange: (String) -> Unit,
     onDescriptionChange: (String) -> Unit,
     onSaveClick: () -> Unit,
     onBack: () -> Unit,
     onMicStart: () -> Unit,
-    onMicStop: () -> Unit,
+    onMicStopAndSave: () -> Unit,
+    onMicStopAndCancel: () -> Unit,
+    onAttachmentClick: () -> Unit,
+    onAiClick: () -> Unit,
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -123,35 +132,110 @@ fun NotesScreen(
             }
         }
 
-        Row(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .padding(16.dp)
-                .clip(RoundedCornerShape(24.dp))
-                .background(Color(0xFF6200EE).copy(alpha = 0.3F)),
-            horizontalArrangement = Arrangement.SpaceEvenly
+        if (isRecording) {
+            RecordingUi(
+                transcript = micTranscript,
+                onCancel = onMicStopAndCancel,
+                onSave = onMicStopAndSave,
+                modifier = Modifier.align(Alignment.BottomCenter)
+            )
+        } else {
+            DefaultBottomBar(
+                onAiClick = onAiClick,
+                onMicClick = onMicStart,
+                onAttachmentClick = onAttachmentClick,
+                modifier = Modifier.align(Alignment.BottomCenter)
+            )
+        }
+    }
+}
+
+@Composable
+fun DefaultBottomBar(
+    onAiClick: () -> Unit,
+    onMicClick: () -> Unit,
+    onAttachmentClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+            .clip(RoundedCornerShape(24.dp))
+            .background(Color(0xFF6200EE).copy(alpha = 0.3F)),
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        IconButton(onClick = onAiClick) {
+            Icon(painterResource(id = R.drawable.baseline_auto_awesome_24), contentDescription = "AI")
+        }
+        IconButton(onClick = onMicClick) {
+            Icon(painterResource(id = R.drawable.baseline_mic_24), contentDescription = "Start Recording")
+        }
+        IconButton(onClick = onAttachmentClick) {
+            Icon(painterResource(id = R.drawable.baseline_attach_file_24), contentDescription = "Attachment")
+        }
+    }
+}
+
+@Composable
+fun RecordingUi(
+    transcript: String,
+    onCancel: () -> Unit,
+    onSave: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    AnimatedVisibility(
+        visible = true,
+        enter = slideInVertically(initialOffsetY = { it }),
+        exit = slideOutVertically(targetOffsetY = { it }),
+        modifier = modifier
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            IconButton(onClick = { /* TODO: AI click */ }) {
-                Icon(painterResource(id = R.drawable.baseline_auto_awesome_24), contentDescription = "AI")
-            }
-            IconButton(
-                modifier = Modifier
-                    .pointerInput(Unit) {
-                        detectTapGestures(
-                            onPress = {
-                                onMicStart()
-                                tryAwaitRelease()
-                                onMicStop()
-                            }
-                        )
-                    },
-                onClick = {}
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(painterResource(id = R.drawable.baseline_mic_24), contentDescription = "Mic")
+                IconButton(onClick = onCancel, modifier = Modifier.size(48.dp)) {
+                    Icon(painterResource(id = R.drawable.baseline_cancel_24), "Cancel Recording", tint = Color.Red)
+                }
+
+                val micSize by animateDpAsState(targetValue = 64.dp, label = "micSizeAnimation")
+                Box(
+                    modifier = Modifier
+                        .size(micSize)
+                        .clip(CircleShape)
+                        .background(Color(0xFF6200EE)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(painterResource(id = R.drawable.baseline_mic_24), "Recording", tint = Color.White)
+                }
+
+                IconButton(onClick = onSave, modifier = Modifier.size(48.dp)) {
+                    Icon(painterResource(id = R.drawable.baseline_check_circle_24), "Save Recording", tint = Color(0xFF00C853))
+                }
             }
-            IconButton(onClick = { /* TODO: Attachment click */ }) {
-                Icon(painterResource(id = R.drawable.baseline_attach_file_24), contentDescription = "Attachment")
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(60.dp)
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(Color(0xFF6200EE).copy(alpha = 0.3F))
+                    .padding(horizontal = 16.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = transcript.ifBlank { "Listening..." },
+                    color = if (transcript.isBlank()) Color.Gray else Color.Black,
+                    textAlign = TextAlign.Center
+                )
             }
         }
     }
@@ -222,16 +306,26 @@ fun CustomRichTextEditor(
 fun NotesScreenPreview() {
     var title by remember { mutableStateOf("2025-07-25") }
     var description by remember { mutableStateOf("This is a test note.\n/ai{Generated block}") }
+    var isRecording by remember { mutableStateOf(false) }
+    var transcript by remember { mutableStateOf("") }
 
     NotesScreen(
         title = title,
         description = description,
         attachmentUri = "content://dummy/path.jpg",
+        isRecording = isRecording,
+        micTranscript = transcript,
         onTitleChange = { title = it },
         onDescriptionChange = { description = it },
         onSaveClick = {},
         onBack = {},
-        onMicStart = {},
-        onMicStop = {},
+        onMicStart = {
+            isRecording = true
+            transcript = ""
+        },
+        onMicStopAndSave = { isRecording = false },
+        onMicStopAndCancel = { isRecording = false },
+        onAttachmentClick = {},
+        onAiClick = {}
     )
 }
