@@ -5,6 +5,8 @@ import androidx.annotation.RequiresApi
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.zitsav.memoir.data.entry.Entry
@@ -29,7 +31,7 @@ class NotesViewModel(
     var title by mutableStateOf("")
         private set
 
-    var description by mutableStateOf("")
+    var description by mutableStateOf(TextFieldValue(""))
         private set
 
     var attachmentUri by mutableStateOf<String?>(null)
@@ -39,12 +41,8 @@ class NotesViewModel(
         title = newTitle
     }
 
-    fun onDescriptionChanged(newDescription: String) {
-        description = newDescription
-    }
-
-    fun onAttachmentChanged(uri: String?) {
-        attachmentUri = uri
+    fun onDescriptionChanged(newValue: TextFieldValue) {
+        description = newValue
     }
 
     private val _isAiGenerating = MutableStateFlow(false)
@@ -65,12 +63,13 @@ class NotesViewModel(
     fun generateAiText() {
         if (_isAiGenerating.value) return
 
-        if (description.isBlank()) {
+        val currentText = description.text
+        if (currentText.isBlank()) {
             viewModelScope.launch { _showErrorToast.emit("Cannot generate from an empty description.") }
             return
         }
 
-        if (description.trim().endsWith("}")) {
+        if (currentText.trim().endsWith("}")) {
             viewModelScope.launch { _showErrorToast.emit("Please add new text after the last AI block.") }
             return
         }
@@ -78,16 +77,17 @@ class NotesViewModel(
         viewModelScope.launch {
             _isAiGenerating.value = true
             try {
-                val request = GeminiRequest(
-                    contents = listOf(Content(parts = listOf(Part(text = description))))
-                )
+                val request = GeminiRequest(contents = listOf(Content(parts = listOf(Part(text = currentText)))))
                 val response = RetrofitInstance.api.generateContent(request)
 
                 if (response.isSuccessful) {
                     val generatedText = response.body()?.candidates?.firstOrNull()?.content?.parts?.firstOrNull()?.text
                     if (!generatedText.isNullOrBlank()) {
-                        val newDescription = "\n$description/ai{$generatedText}\n\n"
-                        onDescriptionChanged(newDescription)
+                        val newText = "$currentText\n/ai{$generatedText}\n"
+                        description = TextFieldValue(
+                            text = newText,
+                            selection = TextRange(newText.length)
+                        )
                     } else {
                         _showErrorToast.emit("Received an empty response from AI.")
                     }
@@ -127,13 +127,15 @@ class NotesViewModel(
 
     private fun onSpeechInput(spokenText: String) {
         if (spokenText.isBlank()) return
-        val currentDescription = description
-        onDescriptionChanged(
-            if (currentDescription.isNotBlank()) {
-                "$currentDescription $spokenText"
-            } else {
-                spokenText
-            }
+        val currentText = description.text
+        val newText = if (currentText.isNotBlank()) {
+            "$currentText $spokenText"
+        } else {
+            spokenText
+        }
+        description = TextFieldValue(
+            text = newText,
+            selection = TextRange(newText.length)
         )
     }
 
@@ -142,13 +144,20 @@ class NotesViewModel(
         if (entry != null) {
             entryId = entry.id
             title = entry.title ?: ""
-            description = entry.text
+            description = TextFieldValue(
+                text = entry.text,
+                selection = TextRange(entry.text.length)
+            )
             attachmentUri = entry.attachment
         }
     }
 
+    fun onAttachmentChanged(uri: String?) {
+        attachmentUri = uri
+    }
+
     fun save() {
-        if (description.isBlank()){
+        if (description.text.isBlank()){
             viewModelScope.launch { _showErrorToast.emit("Cannot save an empty entry") }
             return
         }
@@ -157,7 +166,7 @@ class NotesViewModel(
             id = entryId,
             date = LocalDate.now().toEpochDay(),
             title = title,
-            text = description,
+            text = description.text,
             attachment = attachmentUri,
             mood = null
         )

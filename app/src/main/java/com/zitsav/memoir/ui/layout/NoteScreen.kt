@@ -1,4 +1,4 @@
-package com.zitsav.memoir.layout
+package com.zitsav.memoir.ui.layout
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
@@ -20,27 +20,24 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.*
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.OffsetMapping
-import androidx.compose.ui.text.input.TransformedText
-import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.*
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.zitsav.memoir.R
-
-private val aiPattern = Regex("/ai\\{([\\s\\S]*?)\\}")
+import com.zitsav.memoir.ui.components.TextEditorAppearance
 
 @Composable
 fun NotesScreen(
     title: String,
-    description: String,
+    description: TextFieldValue,
     attachmentUri: String?,
     isRecording: Boolean,
     micTranscript: String,
     onTitleChange: (String) -> Unit,
-    onDescriptionChange: (String) -> Unit,
+    onDescriptionChange: (TextFieldValue) -> Unit,
     onSaveClick: () -> Unit,
     onBack: () -> Unit,
     onMicStart: () -> Unit,
@@ -217,7 +214,9 @@ fun RecordingUi(
         modifier = modifier
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 24.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Row(
@@ -266,69 +265,23 @@ fun RecordingUi(
     }
 }
 
-class AiBlockVisualTransformation : VisualTransformation {
-    override fun filter(text: AnnotatedString): TransformedText {
-        val builder = AnnotatedString.Builder()
-        var lastIndex = 0
-
-        for (match in aiPattern.findAll(text.text)) {
-            val start = match.range.first
-            val end = match.range.last + 1
-            builder.append(text.text.substring(lastIndex, start))
-            builder.withStyle(SpanStyle(color = Color(0xFF6200EE), fontWeight = FontWeight.Bold)) {
-                append(text.text.substring(start, end))
-            }
-            lastIndex = end
-        }
-
-        if (lastIndex < text.text.length) {
-            builder.append(text.text.substring(lastIndex))
-        }
-
-        return TransformedText(builder.toAnnotatedString(), OffsetMapping.Identity)
-    }
-}
-
 @Composable
 fun CustomRichTextEditor(
-    text: String,
-    onTextChange: (String) -> Unit
+    text: TextFieldValue,
+    onTextChange: (TextFieldValue) -> Unit
 ) {
     BasicTextField(
         value = text,
-        onValueChange = { newValue ->
-            val oldMatches = aiPattern.findAll(text).map { it.groupValues[1] }.toList()
-            val newMatches = aiPattern.findAll(newValue).map { it.groupValues[1] }.toList()
-
-            var isTampered = oldMatches.size > newMatches.size
-            if (!isTampered) {
-                var oldIndex = 0
-                for (newIndex in newMatches.indices) {
-                    if (oldIndex < oldMatches.size && newMatches[newIndex] == oldMatches[oldIndex]) {
-                        oldIndex++
-                    }
-                }
-                if (oldIndex != oldMatches.size) {
-                    isTampered = true
-                }
-            }
-
-            if (!isTampered) {
-                onTextChange(newValue)
-            }
-        },
+        onValueChange = onTextChange,
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp),
         textStyle = TextStyle.Default.copy(fontSize = 16.sp, lineHeight = 24.sp),
-        visualTransformation = AiBlockVisualTransformation(),
+        visualTransformation = TextEditorAppearance(),
         decorationBox = { innerTextField ->
             Box(modifier = Modifier.fillMaxWidth()) {
-                if (text.isEmpty()) {
-                    Text(
-                        "Begin writing here...",
-                        style = TextStyle(color = Color.Gray, fontSize = 16.sp)
-                    )
+                if (text.text.isEmpty()) {
+                    Text("Begin writing here...", style = TextStyle(color = Color.Gray, fontSize = 16.sp))
                 }
                 innerTextField()
             }
@@ -340,7 +293,7 @@ fun CustomRichTextEditor(
 @Composable
 fun NotesScreenPreview() {
     var title by remember { mutableStateOf("2025-07-25") }
-    var description by remember { mutableStateOf("This is a test note.\n/ai{Generated block}") }
+    var description by remember { mutableStateOf(TextFieldValue("This is a test note.\n/ai{Generated block}")) }
     var isRecording by remember { mutableStateOf(false) }
     var transcript by remember { mutableStateOf("") }
 

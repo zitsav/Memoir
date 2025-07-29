@@ -7,7 +7,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.annotation.RequiresApi
-import com.zitsav.memoir.layout.HomeScreen
+import com.zitsav.memoir.ui.layout.HomeScreen
 import com.zitsav.memoir.repository.HomeRepository
 import com.zitsav.memoir.viewmodel.HomeViewModel
 import com.zitsav.memoir.data.entry.EntryRepositoryImpl

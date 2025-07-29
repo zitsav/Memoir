@@ -1,4 +1,4 @@
-package com.zitsav.memoir.layout
+package com.zitsav.memoir.ui.layout
 
 import android.os.Build
 import android.widget.Space

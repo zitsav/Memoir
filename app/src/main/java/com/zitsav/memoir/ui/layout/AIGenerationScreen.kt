@@ -1,4 +1,4 @@
-package com.zitsav.memoir.layout
+package com.zitsav.memoir.ui.layout
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn

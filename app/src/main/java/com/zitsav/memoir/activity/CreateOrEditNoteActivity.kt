@@ -30,8 +30,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.zitsav.memoir.data.entry.EntryRepositoryImpl
-import com.zitsav.memoir.layout.AiGenerationOverlay
-import com.zitsav.memoir.layout.NotesScreen
+import com.zitsav.memoir.ui.layout.AiGenerationOverlay
+import com.zitsav.memoir.ui.layout.NotesScreen
 import com.zitsav.memoir.repository.NotesRepository
 import com.zitsav.memoir.viewmodel.NotesViewModel
 import kotlinx.coroutines.launch
