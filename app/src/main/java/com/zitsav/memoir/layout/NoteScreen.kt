@@ -15,6 +15,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.*
 import androidx.compose.ui.text.font.FontWeight
@@ -24,6 +26,8 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.*
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.zitsav.memoir.R
 
 private val aiPattern = Regex("/ai\\{([\\s\\S]*?)\\}")
@@ -43,6 +47,7 @@ fun NotesScreen(
     onMicStopAndSave: () -> Unit,
     onMicStopAndCancel: () -> Unit,
     onAttachmentClick: () -> Unit,
+    onAttachmentRemoved: () -> Unit,
     onAiClick: () -> Unit,
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
@@ -121,11 +126,33 @@ fun NotesScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(150.dp)
-                        .background(Color.Gray.copy(alpha = 0.2f)),
-                    contentAlignment = Alignment.Center
+                        .height(200.dp) // Give it a fixed height
                 ) {
-                    Text("Attachment: $uri")
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(uri)
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = "Note Attachment",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(RoundedCornerShape(12.dp))
+                    )
+                    IconButton(
+                        onClick = onAttachmentRemoved,
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(4.dp)
+                            .clip(CircleShape)
+                            .background(Color.Black.copy(alpha = 0.5f))
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.baseline_cancel_24),
+                            contentDescription = "Remove Attachment",
+                            tint = Color.White
+                        )
+                    }
                 }
             }
         }
@@ -334,6 +361,7 @@ fun NotesScreenPreview() {
         onMicStopAndSave = { isRecording = false },
         onMicStopAndCancel = { isRecording = false },
         onAttachmentClick = {},
+        onAttachmentRemoved = {},
         onAiClick = {}
     )
 }

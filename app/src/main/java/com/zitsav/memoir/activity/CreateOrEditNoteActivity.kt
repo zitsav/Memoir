@@ -1,8 +1,10 @@
 package com.zitsav.memoir.activity
 
 import android.Manifest
+import android.app.AlertDialog
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.speech.RecognitionListener
@@ -23,6 +25,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -32,6 +35,7 @@ import com.zitsav.memoir.layout.NotesScreen
 import com.zitsav.memoir.repository.NotesRepository
 import com.zitsav.memoir.viewmodel.NotesViewModel
 import kotlinx.coroutines.launch
+import java.io.File
 import java.util.Locale
 
 class CreateOrEditNoteActivity : ComponentActivity() {
@@ -39,8 +43,13 @@ class CreateOrEditNoteActivity : ComponentActivity() {
     private lateinit var speechRecognizer: SpeechRecognizer
     private lateinit var recognizerIntent: Intent
     private lateinit var micPermissionLauncher: ActivityResultLauncher<String>
+    private lateinit var cameraPermissionLauncher: ActivityResultLauncher<String>
+    private lateinit var pickImageLauncher: ActivityResultLauncher<String>
+    private lateinit var takePictureLauncher: ActivityResultLauncher<Uri>
+    private var tempImageUri: Uri? = null
 
     private val speechPermission = Manifest.permission.RECORD_AUDIO
+    private val cameraPermission = Manifest.permission.CAMERA
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -54,6 +63,7 @@ class CreateOrEditNoteActivity : ComponentActivity() {
         val entryId = intent.getLongExtra("ENTRY_ID", -1L)
         if (entryId != -1L) viewModel.loadEntry(entryId)
 
+        initializeLaunchers()
         setUpSpeechRecognition()
 
         setContent {
@@ -81,7 +91,8 @@ class CreateOrEditNoteActivity : ComponentActivity() {
                         speechRecognizer.stopListening()
                         viewModel.onRecordingFinished(save = false)
                     },
-                    onAttachmentClick = { /* TODO: Handle attachment click */ },
+                    onAttachmentClick = { showAttachmentDialog() },
+                    onAttachmentRemoved = { viewModel.onAttachmentChanged(null) },
                     onAiClick = { viewModel.generateAiText() }
                 )
             }
@@ -129,6 +140,70 @@ class CreateOrEditNoteActivity : ComponentActivity() {
                 viewModel.showErrorToast.collect { showToast(it) }
             }
         }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun initializeLaunchers() {
+        pickImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+            uri?.let { viewModel.onAttachmentChanged(it.toString()) }
+        }
+
+        takePictureLauncher = registerForActivityResult(ActivityResultContracts.TakePicture()) { success ->
+            if (success) {
+                tempImageUri?.let { viewModel.onAttachmentChanged(it.toString()) }
+            }
+        }
+
+        cameraPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+            if (isGranted) {
+                launchCamera()
+            } else {
+                showToast("Camera permission is required to take a photo.")
+            }
+        }
+
+        micPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+            if (isGranted) { handleMicStart() } else { showToast("Mic permission denied") }
+        }
+    }
+
+    private fun showAttachmentDialog() {
+        val options = arrayOf("Take Photo", "Choose from Gallery")
+        AlertDialog.Builder(this)
+            .setTitle("Add Attachment")
+            .setItems(options) { dialog, which ->
+                when (which) {
+                    0 -> checkCameraPermissionAndLaunch()
+                    1 -> pickImageLauncher.launch("image/*")
+                }
+                dialog.dismiss()
+            }
+            .setNegativeButton("Cancel") { dialog, _ ->
+                dialog.dismiss()
+            }
+            .show()
+    }
+
+    private fun checkCameraPermissionAndLaunch() {
+        when {
+            ContextCompat.checkSelfPermission(this, cameraPermission) == PackageManager.PERMISSION_GRANTED -> {
+                launchCamera()
+            }
+            else -> {
+                cameraPermissionLauncher.launch(cameraPermission)
+            }
+        }
+    }
+
+    private fun launchCamera() {
+        tempImageUri = createImageUri()
+        takePictureLauncher.launch(tempImageUri!!)
+    }
+
+    private fun createImageUri(): Uri {
+        val imageFile = File(cacheDir, "images/${System.currentTimeMillis()}.jpg")
+        imageFile.parentFile?.mkdirs()
+        return FileProvider.getUriForFile(this, "${packageName}.provider", imageFile)
     }
 
     @RequiresApi(Build.VERSION_CODES.O)

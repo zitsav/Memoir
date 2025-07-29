@@ -43,6 +43,10 @@ class NotesViewModel(
         description = newDescription
     }
 
+    fun onAttachmentChanged(uri: String?) {
+        attachmentUri = uri
+    }
+
     private val _isAiGenerating = MutableStateFlow(false)
     val isAiGenerating = _isAiGenerating.asStateFlow()
 
@@ -82,7 +86,7 @@ class NotesViewModel(
                 if (response.isSuccessful) {
                     val generatedText = response.body()?.candidates?.firstOrNull()?.content?.parts?.firstOrNull()?.text
                     if (!generatedText.isNullOrBlank()) {
-                        val newDescription = "\n$description/ai{$generatedText}\n"
+                        val newDescription = "\n$description/ai{$generatedText}\n\n"
                         onDescriptionChanged(newDescription)
                     } else {
                         _showErrorToast.emit("Received an empty response from AI.")
