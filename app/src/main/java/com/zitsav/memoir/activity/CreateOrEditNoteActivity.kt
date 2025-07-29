@@ -71,7 +71,7 @@ class CreateOrEditNoteActivity : ComponentActivity() {
                     onTitleChange = { viewModel.onTitleChanged(it) },
                     onDescriptionChange = { viewModel.onDescriptionChanged(it) },
                     onSaveClick = { viewModel.save() },
-                    onBack = { finish() },
+                    onBack = { launchHomeActivity() },
                     onMicStart = { handleMicStart() },
                     onMicStopAndSave = {
                         speechRecognizer.stopListening()
@@ -82,12 +82,12 @@ class CreateOrEditNoteActivity : ComponentActivity() {
                         viewModel.onRecordingFinished(save = false)
                     },
                     onAttachmentClick = { /* TODO: Handle attachment click */ },
-                    onAiClick = { viewModel.startAiGeneration() }
+                    onAiClick = { viewModel.generateAiText() }
                 )
+            }
 
-                if (isAiGenerating) {
-                    AiGenerationOverlay(onClose = { viewModel.closeAiGeneration() })
-                }
+            if (isAiGenerating) {
+                AiGenerationOverlay(onClose = { viewModel.closeAiGeneration() })
             }
         }
 
@@ -152,7 +152,7 @@ class CreateOrEditNoteActivity : ComponentActivity() {
             @RequiresApi(Build.VERSION_CODES.O)
             override fun onResults(results: Bundle?) {
                 val spokenText = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull()
-                spokenText?.let { viewModel.onSpeechInput(it) }
+                spokenText?.let { viewModel.onRecordingFinished(save = true) }
             }
 
             @RequiresApi(Build.VERSION_CODES.O)

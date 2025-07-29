@@ -11,7 +11,7 @@ import (
 
 func GeminiHandler(c *gin.Context) {
 	apiKey := os.Getenv("GEMINI_API_KEY")
-	url := "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=" + apiKey
+	url := "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + apiKey
 
 	body, err := io.ReadAll(c.Request.Body)
 	if err != nil {

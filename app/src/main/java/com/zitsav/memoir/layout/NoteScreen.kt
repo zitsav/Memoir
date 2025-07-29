@@ -1,6 +1,5 @@
 package com.zitsav.memoir.layout
 
-import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.slideInVertically
@@ -26,7 +25,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.*
 import com.zitsav.memoir.R
-import java.util.regex.PatternSyntaxException
 
 private val aiPattern = Regex("/ai\\{([\\s\\S]*?)\\}")
 
@@ -272,14 +270,24 @@ fun CustomRichTextEditor(
     BasicTextField(
         value = text,
         onValueChange = { newValue ->
-            try {
-                val oldBlockCount = aiPattern.findAll(text).count()
-                val newBlockCount = aiPattern.findAll(newValue).count()
-                if (newBlockCount <= oldBlockCount) {
-                    onTextChange(newValue)
+            val oldMatches = aiPattern.findAll(text).map { it.groupValues[1] }.toList()
+            val newMatches = aiPattern.findAll(newValue).map { it.groupValues[1] }.toList()
+
+            var isTampered = oldMatches.size > newMatches.size
+            if (!isTampered) {
+                var oldIndex = 0
+                for (newIndex in newMatches.indices) {
+                    if (oldIndex < oldMatches.size && newMatches[newIndex] == oldMatches[oldIndex]) {
+                        oldIndex++
+                    }
                 }
-            } catch (e: PatternSyntaxException) {
-                Log.e("RegexError", "Invalid regex pattern", e)
+                if (oldIndex != oldMatches.size) {
+                    isTampered = true
+                }
+            }
+
+            if (!isTampered) {
+                onTextChange(newValue)
             }
         },
         modifier = Modifier

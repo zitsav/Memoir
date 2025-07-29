@@ -71,4 +71,7 @@ dependencies {
     debugImplementation(libs.androidx.ui.test.manifest)
     implementation("net.zetetic:android-database-sqlcipher:4.5.4@aar")
     implementation("androidx.sqlite:sqlite:2.3.1")
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
 }
