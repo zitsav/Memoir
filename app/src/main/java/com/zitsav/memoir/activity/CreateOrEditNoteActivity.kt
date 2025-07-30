@@ -121,6 +121,7 @@ class CreateOrEditNoteActivity : ComponentActivity() {
     }
 
     private fun launchHomeActivity() {
+        viewModel.save()
         startActivity(Intent(this, HomeActivity::class.java))
         finish()
     }
