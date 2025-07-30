@@ -1,7 +1,6 @@
 package com.zitsav.memoir.ui.layout
 
 import android.os.Build
-import android.widget.Space
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -24,17 +23,12 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -42,10 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.zitsav.memoir.R
 import com.zitsav.memoir.data.entry.Entry
-import com.zitsav.memoir.utils.lineCount
-import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneId
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -143,74 +134,53 @@ fun DaySelectorRow(today: LocalDate) {
     }
 }
 
+private val aiPattern = Regex("/ai\\{([\\s\\S]*?)\\}")
+
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun NoteItem(
     entry: Entry,
     onNoteClick: () -> Unit
 ) {
-    val textStyle = MaterialTheme.typography.bodyMedium
     val maxLines = 7
-    var expanded by remember {
-        mutableStateOf(false)
-    }
 
-    val dateStr = Instant.ofEpochMilli(entry.date)
-        .atZone(ZoneId.systemDefault())
-        .toLocalDate()
-        .toString()
+    val filteredText = entry.text.replace(aiPattern, "").trim()
+
+    // FIX: Use LocalDate.ofEpochDay to correctly interpret the date
+    val dateStr = LocalDate.ofEpochDay(entry.date).toString()
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.surfaceVariant, shape = RoundedCornerShape(8.dp))
             .padding(16.dp)
-            .clickable {
-                onNoteClick()
-            }
+            .clickable(onClick = onNoteClick)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
+        if (!entry.title.isNullOrBlank()) {
             Text(
-                text = entry.title ?: dateStr,
+                text = entry.title,
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
-            if (entry.title != null) {
-                Text(
-                    text = dateStr,
-                    style = MaterialTheme.typography.labelSmall
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        val textToDisplay = if (expanded || entry.text.lineCount() <= maxLines) {
-            entry.text
-        } else {
-            entry.text.trim().lines().take(maxLines).joinToString("\n")
+            Spacer(modifier = Modifier.height(8.dp))
         }
 
         Text(
-            text = textToDisplay,
-            style = textStyle,
-            maxLines = if (expanded) Int.MAX_VALUE else maxLines,
+            text = filteredText,
+            style = MaterialTheme.typography.bodyMedium,
+            maxLines = maxLines,
             overflow = TextOverflow.Ellipsis
         )
 
-        if (entry.text.lineCount() > maxLines && !expanded) {
-            Text(
-                text = "Read more",
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier
-                    .clickable { expanded = true }
-                    .padding(top = 8.dp)
-            )
-        }
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            text = dateStr,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 
