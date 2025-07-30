@@ -82,12 +82,18 @@ class NotesViewModel(
 
                 if (response.isSuccessful) {
                     val generatedText = response.body()?.candidates?.firstOrNull()?.content?.parts?.firstOrNull()?.text
+
                     if (!generatedText.isNullOrBlank()) {
-                        val newText = "$currentText\n/ai{$generatedText}\n"
-                        description = TextFieldValue(
-                            text = newText,
-                            selection = TextRange(newText.length)
-                        )
+                        if (generatedText.startsWith("[") && generatedText.endsWith("]")) {
+                            val errorMessage = generatedText.substring(1, generatedText.length - 1)
+                            _showErrorToast.emit(errorMessage)
+                        } else {
+                            val newText = "$currentText\n/ai{$generatedText}\n"
+                            description = TextFieldValue(
+                                text = newText,
+                                selection = TextRange(newText.length)
+                            )
+                        }
                     } else {
                         _showErrorToast.emit("Received an empty response from AI.")
                     }
